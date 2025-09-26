@@ -23,13 +23,15 @@ function App() {
       });
 
       if(!response.ok){
-        throw new Error('Something went wrong!');
+        const errData = await response.json(); // read JSON error from backend
+        throw new Error(errData.error || 'Something went wrong!');
       }
+
 
       const data = await response.json();
       setBuildingData(data);
       } catch (err) {
-        setError(error.message);
+        setError(err.message);
       } finally {
         setIsLoading(false);
       }
