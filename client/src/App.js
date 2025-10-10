@@ -1,132 +1,84 @@
-// import React, { useState } from 'react';
-// import './App.css';
-
-// function App() {
-//   const [address, setAddress] = useState(''); 
-//   const [buildingData, setBuildingData] = useState(null);
-//   const [isLoading, setIsLoading] = useState(false);
-//   const [error, setError] = useState('');
-
-//   //starts loading state, clears old error/data
-//   const handleSubmit = async (event) => {
-//     event.preventDefault(); //stop browser refresh
-//     setIsLoading(true);
-//     setError('');
-//     setBuildingData(null);
-
-//     //API call
-//     try{
-//       const response = await fetch('http://localhost:5001/api/lookup', {
-//         method: 'POST',
-//         headers: {'Content-Type': 'application/json'},
-//         body: JSON.stringify({address}),
-//       });
-
-//       if(!response.ok){
-//         const errData = await response.json(); // read JSON error from backend
-//         throw new Error(errData.error || 'Something went wrong!');
-//       }
-
-
-//       const data = await response.json();
-//       setBuildingData(data);
-//       } catch (err) {
-//         setError(err.message);
-//       } finally {
-//         setIsLoading(false);
-//       }
-//     };
-
-//   return (
-//     <div className="App">
-//       <header className="App-header">
-//         <h1>NYC DOB Lookup</h1>
-//         <form onSubmit={handleSubmit} className='lookup-form'>
-//           <input
-//             type='text'
-//             value={address}
-//             onChange={(e) => setAddress(e.target.value)}
-//             placeholder='Enter Building Address'
-//             className='address-input'
-//             required
-//           />
-//           <button type="submit" disabled={isLoading} className='submit-button'>
-//             {isLoading ? 'Searching...' : 'Search'}
-//           </button>
-//         </form>
-
-//         {error && <div className='error-message'>Error: {error}</div>}
-
-//         {buildingData && (
-//           <div className='results-container'>
-//             <h2>Lookup Results:</h2>
-//             <pre>{JSON.stringify(buildingData, null, 2)}</pre>
-//           </div>
-//         )}
-//       </header>
-//     </div>
-//   );
-// }
-
-// export default App;
 import React, { useState } from 'react';
 import './App.css';
 
 function App() {
   const [address, setAddress] = useState('');
+  const [previewData, setPreviewData] = useState(null);
+  const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  // No longer need buildingData state since we are not displaying it
-  // const [buildingData, setBuildingData] = useState(null);
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  // search bar
+  const handleSearch = async () => {
+    if (!address) {
+      setMessage('Please enter an address.');
+      return;
+    }
+    
+    // reset state
+    setPreviewData(null);
     setIsLoading(true);
-    setError('');
-    // setBuildingData(null); // No longer needed
+    setMessage('');
 
     try {
-      const response = await fetch('http://localhost:5001/api/lookup', {
+      // url --> backend
+      const response = await fetch('http://localhost:5001/api/search-address', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address }),
+        body: JSON.stringify({ address: address }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Address not found.');
+      }
+      
+      setPreviewData(data);
+
+    } catch (error) {
+      setMessage(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // generate report
+  const handleGenerateReport = async () => {
+    if (!previewData || !previewData.Address) {
+      setMessage('No data available to generate report.');
+      return;
+    }
+
+    setIsLoading(true);
+    setMessage('Generating your report...');
+
+    try {
+      const response = await fetch('http://localhost:5001/api/generate-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: previewData.Address }),
       });
 
       if (!response.ok) {
-        // If the server sends an error (like 404), it WILL be JSON
         const errData = await response.json();
-        throw new Error(errData.error || 'Something went wrong!');
+        throw new Error(errData.error || 'Failed to generate the document.');
       }
-
-      // --- START: NEW FILE HANDLING LOGIC ---
-
-      // 1. Get the response body as a Blob (binary data)
+      
+      // file download
       const blob = await response.blob();
-
-      // 2. Create a temporary URL for the Blob
       const url = window.URL.createObjectURL(blob);
-
-      // 3. Create a temporary anchor (<a>) element
       const a = document.createElement('a');
-      a.style.display = 'none'; // Keep it hidden
       a.href = url;
-
-      // 4. Set the download filename
       a.download = 'Compliance_Report.docx';
-
-      // 5. Append the anchor to the body and trigger a click to start the download
       document.body.appendChild(a);
       a.click();
-
-      // 6. Clean up by removing the anchor and revoking the URL
-      document.body.removeChild(a);
+      a.remove();
       window.URL.revokeObjectURL(url);
+      
+      setMessage('Report downloaded successfully!');
 
-      // --- END: NEW FILE HANDLING LOGIC ---
-
-    } catch (err) {
-      setError(err.message);
+    } catch (error) {
+      setMessage(error.message);
     } finally {
       setIsLoading(false);
     }
@@ -135,25 +87,41 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>NYC DOB Lookup</h1>
-        <form onSubmit={handleSubmit} className='lookup-form'>
+        <h1>Building Compliance Report Generator</h1>
+        
+        <div className="input-group">
           <input
-            type='text'
+            type="text"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            placeholder='Enter Building Address'
-            className='address-input'
-            required
+            placeholder="Enter building address..."
           />
-          <button type="submit" disabled={isLoading} className='submit-button'>
-            {isLoading ? 'Generating...' : 'Generate Report'}
+          <button onClick={handleSearch} disabled={isLoading}>
+            Search
           </button>
-        </form>
+        </div>
 
-        {error && <div className='error-message'>Error: {error}</div>}
 
-        {/* The section to display JSON data is no longer needed */}
-        {/* {buildingData && ( ... )} */}
+        {isLoading && <div className="message loading">Please wait...</div>}
+        {message && <div className="message error">{message}</div>}
+
+        {previewData && (
+          <div className="preview-container">
+            <h3>Report Preview for: {previewData.Address}</h3>
+            <p><strong>Building Owner/Manager:</strong> {previewData["Building Owner/Manager"] || 'N/A'}</p>
+            <p><strong>Borough:</strong> {previewData.Borough || 'N/A'}</p>
+            <p><strong>BIN:</strong> {previewData.BIN || 'N/A'}</p>
+            <p><strong>FISP Compliance Status:</strong> {previewData["FISP Compliance Status"] || 'N/A'}</p>
+          </div>
+        )}
+
+        {/*generate button */}
+        {previewData && (
+          <button className="generate-button" onClick={handleGenerateReport} disabled={isLoading}>
+            Download Full Report
+          </button>
+        )}
+
       </header>
     </div>
   );
