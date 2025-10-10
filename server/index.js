@@ -19,13 +19,14 @@ let buildingData = []; // excel data
 // loads data from acel into buildingdata
 function loadExcelData() {
     try {
-        const workbook = xlsx.readFile('master_sheet.xlsx');
+        // const workbook = xlsx.readFile('master_sheet.xlsx');
+        const workbook = xlsx.readFile('final_merged.xlsx');
         const sheetName = workbook.SheetNames[0];
         buildingData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName], {cellDates: true});
         console.log(`✅ Data loaded/reloaded. ${buildingData.length} records in memory.`);
         return true;
     } catch (error) {
-        console.error("Could not load 'master_sheet.xlsx'.", error.message);
+        console.error("Could not load 'final_merged.xlsx'.", error.message);
         // if file doesnt load, server doesnt run
         if (buildingData.length === 0) process.exit(1); 
         return false;
@@ -103,6 +104,8 @@ app.post('/api/generate-report', (req, res) => {
         res.status(500).json({ error: 'Failed to generate the report.' });
     }
 });
+
+
 
 // starting server
 app.listen(PORT, () => {
