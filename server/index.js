@@ -6,6 +6,11 @@ import xlsx from 'xlsx';
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 import { execFile } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Setup
 const app = express();
@@ -21,7 +26,7 @@ let buildingData = []; // excel data
 function loadExcelData() {
     try {
         // const workbook = xlsx.readFile('final_merged.xlsx');
-        const workbook = xlsx.readFile(path.join(__dirname, "final_merged.xlsx"));
+        const workbook = xlsx.readFile(join(__dirname, "final_merged.xlsx"));
         const sheetName = workbook.SheetNames[0];
         buildingData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName], {cellDates: true});
         console.log(`✅ Data loaded/reloaded. ${buildingData.length} records in memory.`);
@@ -174,7 +179,7 @@ app.post('/api/generate-report', (req, res) => {
     }
     
     try {
-        const templatePath = path.join(__dirname, "newtemp.docx");
+        const templatePath = join(__dirname, "newtemp.docx");
         const content = fs.readFileSync(templatePath, "binary");
 
         const zip = new PizZip(content);
