@@ -1,4 +1,5 @@
 import express from 'express';
+import 'dotenv/config';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
@@ -9,12 +10,13 @@ import { execFile } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Setup
 const app = express();
-const PORT = process.env.PORT || 5001;
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
@@ -202,11 +204,23 @@ app.post('/api/generate-report', (req, res) => {
 });
 
 
+// Serve React static files
+const clientBuildPath = join(__dirname, '../client/build');
+app.use(express.static(clientBuildPath));
 
-// starting server
+// React SPA fallback
+app.get((req, res) => {
+  res.sendFile(join(clientBuildPath, 'index.html'));
+});
+// ---------- Start Server ----------
+const PORT = process.env.PORT;
+if (!PORT) {
+  console.error("Error: PORT not defined in environment.");
+  process.exit(1);
+}
 app.listen(PORT, () => {
-    console.log(`Server is running on ${PORT}`);
-    loadExcelData(); 
+  console.log(`Server running on port ${PORT}`);
+  loadExcelData();
 });
 
 
