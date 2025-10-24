@@ -25,7 +25,6 @@ let buildingData = []; // excel data
 // loads data from acel into buildingdata
 function loadExcelData() {
     try {
-        // const workbook = xlsx.readFile('final_merged.xlsx');
         const workbook = xlsx.readFile(join(__dirname, "final_merged.xlsx"));
         const sheetName = workbook.SheetNames[0];
         buildingData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName], {cellDates: true});
@@ -33,11 +32,11 @@ function loadExcelData() {
         return true;
     } catch (error) {
         console.error("Could not load 'final_merged.xlsx'.", error.message);
-        // if file doesnt load, server doesnt run
-        if (buildingData.length === 0) process.exit(1); 
+        // Do not crash server
         return false;
     }
 }
+
 function determineCompliance(excelData){
     
     const fispStatus = excelData['FISP Compliance Status']
@@ -206,7 +205,7 @@ app.post('/api/generate-report', (req, res) => {
 
 // starting server
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server is running on ${PORT}`);
     loadExcelData(); 
 });
 
