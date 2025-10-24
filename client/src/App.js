@@ -21,7 +21,7 @@ function App() {
 
     try {
       // url --> backend
-      const response = await fetch('http://localhost:5001/api/search-address', {
+      const response = await fetch('/api/search-address', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ address: address }),
@@ -53,7 +53,7 @@ function App() {
     setMessage('Generating your report...');
 
     try {
-      const response = await fetch('http://localhost:5001/api/generate-report', {
+      const response = await fetch('/api/generate-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ address: previewData.Address }),
