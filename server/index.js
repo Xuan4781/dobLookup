@@ -33,8 +33,33 @@ function loadExcelData() {
         return false;
     }
 }
+function determineCompliance(excelData){
+    
+    const fispStatus = excelData['FISP Compliance Status']
+    const fispLastFilingStatus = excelData['FISP Last Filing Status']
+
+    if(fispStatus === "UNSAFE"){
+        return 'Non-Compliant';
+    }
+    if(fispStatus === "No Report Filed"){
+        return 'Non-Compliant'
+    }
+    if(fispStatus === "SWARMP" || fispLastFilingStatus?.includes('SWARMP')){
+        return 'In Compliance';
+    }
+
+    const currentDate = new Date();
+    const fispDue = new Date(excelData['FISP Filing Due']);
+
+    if(fispDue < currentDate){
+        return 'Non-Compliant';
+    }
+    return 'In Compliance'
+}
+
 
 function mapExcel(excelData){
+    const complianceStatus = determineCompliance(excelData);
     return {
         'Address': excelData['Address'],
         'Building_OwnerManager': excelData['Building Owner/Manager'],
@@ -57,6 +82,7 @@ function mapExcel(excelData){
         'LL126 Previous Filing Status': excelData['LL126 Previous Filing Status'],
         'LL126 SREM Recommended Date': excelData['LL126 SREM Recommended Date'],
         'LL126 Filing Window': excelData['LL126 Filing Window'],
+        'LL126 Filing Due': excelData['LL126 Filing Due'],
         'LL126 Next Steps': excelData['LL126 Next Steps'],
         'LL126 Parapet Compliance Status': excelData['LL126 Parapet Compliance Status'],
         'LL84 Compliance Status': excelData['LL84 Compliance Status'],
@@ -72,8 +98,9 @@ function mapExcel(excelData){
         'LL97 Compliance Status': excelData['LL97 Compliance Status'],
         'LL97 Filing Due': excelData['LL97 Filing Due'],
         'LL97 Next Steps': excelData['LL97 Next Steps'],
-        'Contact Email': excelData['Contact Email'],
-        'Contact Phone': excelData['Contact Phone']
+        'Contact Email': excelData['Contact Email'] || 'Chelsea.Coppinger@socotec.us',
+        'Contact Phone': excelData['Contact Phone'] || '+1 646 549 6045',
+
     }
 }
 
@@ -142,12 +169,12 @@ app.post('/api/generate-report', (req, res) => {
             stringValue === 'nan' ||
             Number.isNaN(value)) {
             processedValue = 'N/A';
-        }    
+        }
         processedData[key] = processedValue;
     }
     
     try {
-        const templatePath = path.resolve("./Building Report Card_Word Template.docx");
+        const templatePath = path.resolve("./newtemp.docx");
         const content = fs.readFileSync(templatePath, "binary");
 
         const zip = new PizZip(content);
