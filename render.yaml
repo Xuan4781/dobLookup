@@ -2,6 +2,6 @@ services:
   - type: web
     name: dob-server
     env: node
-    rootDir: .
+    rootDir: server      
     buildCommand: npm install
     startCommand: node index.js
