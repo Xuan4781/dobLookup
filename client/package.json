@@ -37,6 +37,7 @@
     ]
   },
   "devDependencies": {
+    "clean-css": "^5.3.3",
     "cross-env": "^10.0.0"
   }
 }
